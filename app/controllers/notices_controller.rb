@@ -21,10 +21,31 @@ class NoticesController < ApplicationController
         issue.category = IssueCategory.find_by_name(redmine_params[:category]) unless redmine_params[:category].blank?
         issue.assigned_to = User.find_by_login(redmine_params[:assigned_to]) unless redmine_params[:assigned_to].blank?
         issue.priority_id = redmine_params[:priority] unless redmine_params[:priority].blank?
-        issue.client = redmine_params[:custom][:client] if redmine_params[:custom] and redmine_params[:custom][:client]
       end
 
+      new_issue? = issue.new_record?
+
       issue.save!
+    
+      #TODO: Refactor to iterate through redmine_params[:custom] hash key/value pairs and dynamically create custom values for issue.
+      if redmine_params[:custom] and redmine_params[:custom][:client]
+        field = CustomField.find_by_name("Client")
+        if field
+          if new_issue?
+            CustomValue.create(:customized_type=>"Issue",
+                               :customized_id=>issue.id,
+                               :custom_field_id=>field.id,
+                               :value=>redmine_params[:custom][:client]
+                               )
+          else
+            cv = CustomValue.find_by_customized_type_and_customized_id_and_custom_field_id("Issue", issue.id, field.id)
+            cv.value = redmine_params[:custom][:client]
+            cv.save!
+          end
+        else
+          logger.info 'No Custom Client Field Found.'
+        end
+      end
 
       journal = issue.init_journal(author, "h4. Backtrace\n\n<pre>#{notice['back'].to_yaml}</pre>\n\n
                                             h4. Request\n\n<pre>#{notice['request'].to_yaml}</pre>\n\n
