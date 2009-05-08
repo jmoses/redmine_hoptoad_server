@@ -23,7 +23,7 @@ class NoticesController < ApplicationController
         issue.priority_id = redmine_params[:priority] unless redmine_params[:priority].blank?
       end
 
-      new_issue? = issue.new_record?
+      new_issue = issue.new_record?
 
       issue.save!
     
@@ -31,7 +31,7 @@ class NoticesController < ApplicationController
       if redmine_params[:custom] and redmine_params[:custom][:client]
         field = CustomField.find_by_name("Client")
         if field
-          if new_issue?
+          if new_issue
             CustomValue.create(:customized_type=>"Issue",
                                :customized_id=>issue.id,
                                :custom_field_id=>field.id,
