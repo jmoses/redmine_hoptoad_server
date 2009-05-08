@@ -23,20 +23,15 @@ class NoticesController < ApplicationController
         issue.priority_id = redmine_params[:priority] unless redmine_params[:priority].blank?
       end
 
-      new_issue = issue.new_record?
-
-      issue.save!
-    
       #TODO: Refactor to iterate through redmine_params[:custom] hash key/value pairs and dynamically create custom values for issue.
       if redmine_params[:custom] and redmine_params[:custom][:client]
         field = CustomField.find_by_name("Client")
         if field
-          if new_issue
-            CustomValue.create(:customized_type=>"Issue",
-                               :customized_id=>issue.id,
-                               :custom_field_id=>field.id,
-                               :value=>redmine_params[:custom][:client]
-                               )
+          if issue.new_record?
+            issue.custom_field_value.create(:customized_type=>"Issue",
+                                            :customized_id=>issue.id,
+                                            :custom_field_id=>field.id,
+                                            :value=>redmine_params[:custom][:client] )
           else
             cv = CustomValue.find_by_customized_type_and_customized_id_and_custom_field_id("Issue", issue.id, field.id)
             cv.value = redmine_params[:custom][:client]
@@ -47,6 +42,8 @@ class NoticesController < ApplicationController
         end
       end
 
+      issue.save!
+
       journal = issue.init_journal(author, "h4. Backtrace\n\n<pre>#{notice['back'].to_yaml}</pre>\n\n
                                             h4. Request\n\n<pre>#{notice['request'].to_yaml}</pre>\n\n
                                             h4. Session\n\n<pre>#{notice['session'].to_yaml}</pre>\n\n
@@ -55,7 +52,6 @@ class NoticesController < ApplicationController
       if issue.status.blank? or issue.status.is_closed?                                                                                                        
         issue.status = IssueStatus.find(:first, :conditions => {:is_default => true}, :order => 'position ASC')
       end
-
 
       issue.save!
 
