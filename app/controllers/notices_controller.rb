@@ -28,7 +28,7 @@ class NoticesController < ApplicationController
         field = CustomField.find_by_name("Client")
         if field
           if issue.new_record?
-            issue.custom_field_value.create(:customized_type=>"Issue",
+            issue.custom_field_values.create(:customized_type=>"Issue",
                                             :customized_id=>issue.id,
                                             :custom_field_id=>field.id,
                                             :value=>redmine_params[:custom][:client] )
