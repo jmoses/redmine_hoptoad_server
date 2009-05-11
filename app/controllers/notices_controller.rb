@@ -25,7 +25,7 @@ class NoticesController < ApplicationController
 
       if redmine_params[:custom]
         redmine_params[:custom].each do |key,val|
-          field = CustomField.find_by_name(key.capitalize)
+          field = CustomField.find_by_name(key.to_s.capitalize)
           if field
             if issue.new_record?
               issue.custom_values.build(:custom_field_id=>field.id,
