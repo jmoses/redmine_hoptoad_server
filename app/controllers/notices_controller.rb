@@ -23,20 +23,21 @@ class NoticesController < ApplicationController
         issue.priority_id = redmine_params[:priority] unless redmine_params[:priority].blank?
       end
 
-      #TODO: Refactor to iterate through redmine_params[:custom] hash key/value pairs and dynamically create custom values for issue.
-      if redmine_params[:custom] and redmine_params[:custom][:client]
-        field = CustomField.find_by_name("Client")
-        if field
-          if issue.new_record?
-            issue.custom_values.build(:custom_field_id=>field.id,
-                                       :value=>redmine_params[:custom][:client] )
+      if redmine_params[:custom]
+        redmine_params[:custom].each do |key,val|
+          field = CustomField.find_by_name(key.capitalize)
+          if field
+            if issue.new_record?
+              issue.custom_values.build(:custom_field_id=>field.id,
+                                        :value=>val )
+            else
+              cv = CustomValue.find_by_customized_type_and_customized_id_and_custom_field_id("Issue", issue.id, field.id)
+              cv.value = val
+              cv.save!
+            end
           else
-            cv = CustomValue.find_by_customized_type_and_customized_id_and_custom_field_id("Issue", issue.id, field.id)
-            cv.value = redmine_params[:custom][:client]
-            cv.save!
+            logger.info "No Custom Field Found For #{key}."
           end
-        else
-          logger.info 'No Custom Client Field Found.'
         end
       end
 
